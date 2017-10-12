@@ -1,0 +1,84 @@
+version: "2"
+services:
+    consul-bootstrap-server:
+        image: "consul"
+        container_name: "consul-bootstrap-server"
+        hostname: "consul-bootstrap-server"
+        expose:
+        - 8400
+        - 8500
+        - 8600
+        command: "agent -server  -node=consul-bootstrap-server -bootstrap-expect 5"  
+
+    consul-server1:
+        image: "consul"
+        container_name: "consul-server1"
+        hostname: "consul-server1"
+        expose:
+        - 8400
+        - 8500
+        - 8600
+        command: "agent -server -node=consul-server1 -retry-join consul-bootstrap-server"
+        depends_on:
+            - consul-bootstrap-server
+
+    consul-server2:
+        image: "consul"
+        container_name: "consul-server2"
+        hostname: "consul-server2"
+        expose:
+        - 8400
+        - 8500
+        - 8600
+        command: "agent -server -node=consul-server2 -retry-join consul-bootstrap-server"
+        depends_on:
+            - consul-bootstrap-server
+    
+    consul-server3:
+        image: "consul"
+        container_name: "consul-server3"
+        hostname: "consul-server3"
+        expose:
+        - 8400
+        - 8500
+        - 8600
+        command: "agent -server -node=consul-server3 -retry-join consul-bootstrap-server"
+        depends_on:
+            - consul-bootstrap-server
+
+    consul-server4:
+        image: "consul"
+        container_name: "consul-server4"
+        hostname: "consul-server4"
+        expose:
+        - 8400
+        - 8500
+        - 8600
+        command: "agent -server -node=consul-server4 -retry-join consul-bootstrap-server"
+        depends_on:
+            - consul-bootstrap-server
+
+    consul-client:
+        image: "consul"
+        container_name: "consul-client"
+        hostname: "consul-client"
+        ports:
+        - 8400:8400
+        - 8500:8500
+        - 8600:53/udp
+        command: "agent -node=consul-client -retry-join consul-bootstrap-server -ui -client 0.0.0.0"
+        depends_on:
+            - consul-bootstrap-server
+
+    git2consul:
+        build: ./git2consul-docker/
+        container_name: git2consul
+        links:
+        - consul-client
+        volumes:
+        - ./git2consul.d:/etc/git2consul.d
+        - ./git2consul-docker/wait_for_consul_leader.sh:/wait_for_consul_leader.sh
+        environment:
+        - CONSUL_ENDPOINT=consul-client
+        - COMMAND=--config-file /etc/git2consul.d/config.json
+        entrypoint: sh wait_for_consul_leader.sh
